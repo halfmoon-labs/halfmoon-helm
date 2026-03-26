@@ -1,0 +1,74 @@
+suite: PersistentVolumeClaim
+templates:
+  - templates/pvc.yaml
+values:
+  - ../values.yaml
+set:
+  config.agents.defaults.model_name: "test-model"
+tests:
+  - it: should render a PVC when persistence is enabled
+    asserts:
+      - isKind:
+          of: PersistentVolumeClaim
+
+  - it: should set default size
+    asserts:
+      - equal:
+          path: spec.resources.requests.storage
+          value: 5Gi
+
+  - it: should set default access mode
+    asserts:
+      - contains:
+          path: spec.accessModes
+          content: ReadWriteOnce
+
+  - it: should support custom size
+    set:
+      persistence.size: 10Gi
+    asserts:
+      - equal:
+          path: spec.resources.requests.storage
+          value: 10Gi
+
+  - it: should support custom access mode
+    set:
+      persistence.accessMode: ReadWriteMany
+    asserts:
+      - contains:
+          path: spec.accessModes
+          content: ReadWriteMany
+
+  - it: should set storage class when specified
+    set:
+      persistence.storageClass: fast-ssd
+    asserts:
+      - equal:
+          path: spec.storageClassName
+          value: "fast-ssd"
+
+  - it: should not set storage class when empty
+    asserts:
+      - isNull:
+          path: spec.storageClassName
+
+  - it: should not render when persistence is disabled
+    set:
+      persistence.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not render when existingClaim is set
+    set:
+      persistence.existingClaim: my-existing-pvc
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should have standard labels
+    asserts:
+      - isNotNull:
+          path: metadata.labels["app.kubernetes.io/name"]
+      - isNotNull:
+          path: metadata.labels["helm.sh/chart"]

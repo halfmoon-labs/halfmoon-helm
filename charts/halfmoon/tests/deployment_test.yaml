@@ -1,0 +1,379 @@
+suite: Deployment
+templates:
+  - templates/deployment.yaml
+  - templates/configmap.yaml
+  - templates/secret.yaml
+  - templates/workspace-configmap.yaml
+values:
+  - ../values.yaml
+set:
+  config.agents.defaults.model_name: "test-model"
+tests:
+  - it: should render a Deployment
+    asserts:
+      - isKind:
+          of: Deployment
+        template: templates/deployment.yaml
+
+  - it: should use Recreate strategy
+    asserts:
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+        template: templates/deployment.yaml
+
+  - it: should have exactly 1 replica
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+        template: templates/deployment.yaml
+
+  - it: should set correct image with default tag
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: "ghcr.io/halfmoon-labs/halfmoon:.+"
+        template: templates/deployment.yaml
+
+  - it: should use custom image tag when set
+    set:
+      image.tag: "1.0.0"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "ghcr.io/halfmoon-labs/halfmoon:1.0.0"
+        template: templates/deployment.yaml
+
+  - it: should set HALFMOON_HOME env var
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: HALFMOON_HOME
+            value: /home/halfmoon/.halfmoon
+        template: templates/deployment.yaml
+
+  - it: should include extra env vars
+    set:
+      extraEnv:
+        - name: MY_VAR
+          value: my-value
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MY_VAR
+            value: my-value
+        template: templates/deployment.yaml
+
+  - it: should set container port from config
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 18790
+        template: templates/deployment.yaml
+
+  - it: should configure liveness probe
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /health
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: gateway
+        template: templates/deployment.yaml
+
+  - it: should configure readiness probe
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /ready
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: gateway
+        template: templates/deployment.yaml
+
+  - it: should configure startup probe
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.path
+          value: /health
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.failureThreshold
+          value: 30
+        template: templates/deployment.yaml
+
+  - it: should have init container running onboard via shell
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: init-workspace
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[0].command
+          value: ["sh", "-c"]
+        template: templates/deployment.yaml
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: "halfmoon onboard"
+        template: templates/deployment.yaml
+
+  - it: should not mount workspace-files volume when no workspace files defined
+    asserts:
+      - notContains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: workspace-files
+          any: true
+        template: templates/deployment.yaml
+
+  - it: should mount workspace-files volume when workspace files are defined
+    set:
+      workspace.files.AGENT\.md: "You are Halfmoon"
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: workspace-files
+            mountPath: /workspace-files
+            readOnly: true
+        template: templates/deployment.yaml
+
+  - it: should add workspace-files volume when workspace files are defined
+    set:
+      workspace.files.AGENT\.md: "You are Halfmoon"
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: workspace-files
+            configMap:
+              name: RELEASE-NAME-halfmoon-workspace
+        template: templates/deployment.yaml
+
+  - it: should not add workspace-files volume when no workspace files defined
+    asserts:
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: workspace-files
+          any: true
+        template: templates/deployment.yaml
+
+  - it: should include copy script when workspace files are defined
+    set:
+      workspace.files.AGENT\.md: "You are Halfmoon"
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: "Copy workspace identity files"
+        template: templates/deployment.yaml
+
+  - it: should include agent copy script when agent workspace files are defined
+    set:
+      workspace.agents.researcher.AGENT\.md: "You are a researcher"
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: "Copy workspace identity files"
+        template: templates/deployment.yaml
+
+  - it: should mount config as read-only
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: config
+            mountPath: /home/halfmoon/.halfmoon/config.json
+            subPath: config.json
+            readOnly: true
+        template: templates/deployment.yaml
+
+  - it: should mount security as read-only with mode 0600
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: security
+            mountPath: /home/halfmoon/.halfmoon/.security.yml
+            subPath: .security.yml
+            readOnly: true
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.volumes[1].secret.defaultMode
+          value: 384
+        template: templates/deployment.yaml
+
+  - it: should use PVC when persistence enabled
+    set:
+      persistence.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[2].persistentVolumeClaim.claimName
+          value: RELEASE-NAME-halfmoon
+        template: templates/deployment.yaml
+
+  - it: should use emptyDir when persistence disabled
+    set:
+      persistence.enabled: false
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[2].emptyDir
+          value: {}
+        template: templates/deployment.yaml
+
+  - it: should use existing PVC claim when set
+    set:
+      persistence.enabled: true
+      persistence.existingClaim: my-pvc
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[2].persistentVolumeClaim.claimName
+          value: my-pvc
+        template: templates/deployment.yaml
+
+  - it: should use existing secret when set
+    set:
+      credentials.existingSecret: my-secret
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[1].secret.secretName
+          value: my-secret
+        template: templates/deployment.yaml
+
+  - it: should set pod security context
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 1000
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 1000
+        template: templates/deployment.yaml
+
+  - it: should set container security context
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsNonRoot
+          value: true
+        template: templates/deployment.yaml
+
+  - it: should set resources when specified
+    set:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 64Mi
+        limits:
+          cpu: 1000m
+          memory: 256Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: 100m
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 256Mi
+        template: templates/deployment.yaml
+
+  - it: should not set resources when empty
+    asserts:
+      - isNull:
+          path: spec.template.spec.containers[0].resources
+        template: templates/deployment.yaml
+
+  - it: should add checksum annotations for config, secret, and workspace
+    asserts:
+      - isNotNull:
+          path: spec.template.metadata.annotations["checksum/config"]
+        template: templates/deployment.yaml
+      - isNotNull:
+          path: spec.template.metadata.annotations["checksum/secret"]
+        template: templates/deployment.yaml
+      - isNotNull:
+          path: spec.template.metadata.annotations["checksum/workspace"]
+        template: templates/deployment.yaml
+
+  - it: should include pod annotations
+    set:
+      podAnnotations:
+        prometheus.io/scrape: "true"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["prometheus.io/scrape"]
+          value: "true"
+        template: templates/deployment.yaml
+
+  - it: should include pod labels
+    set:
+      podLabels:
+        custom-label: custom-value
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels.custom-label
+          value: custom-value
+        template: templates/deployment.yaml
+
+  - it: should set node selector
+    set:
+      nodeSelector:
+        disktype: ssd
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector.disktype
+          value: ssd
+        template: templates/deployment.yaml
+
+  - it: should set tolerations
+    set:
+      tolerations:
+        - key: "key1"
+          operator: "Equal"
+          value: "value1"
+          effect: "NoSchedule"
+    asserts:
+      - contains:
+          path: spec.template.spec.tolerations
+          content:
+            key: "key1"
+            operator: "Equal"
+            value: "value1"
+            effect: "NoSchedule"
+        template: templates/deployment.yaml
+
+  - it: should set affinity
+    set:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/os
+                    operator: In
+                    values:
+                      - linux
+    asserts:
+      - isNotNull:
+          path: spec.template.spec.affinity.nodeAffinity
+        template: templates/deployment.yaml
+
+  - it: should set image pull secrets
+    set:
+      imagePullSecrets:
+        - name: my-registry
+    asserts:
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: my-registry
+        template: templates/deployment.yaml

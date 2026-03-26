@@ -1,0 +1,17 @@
+apiVersion: v2
+name: halfmoon
+description: Helm chart for Halfmoon — ultra-lightweight AI assistant in Go
+type: application
+version: 0.1.0
+appVersion: "0.2.3"
+home: https://halfmoon.sh
+sources:
+  - https://github.com/halfmoon-labs/halfmoon
+keywords:
+  - halfmoon
+  - ai
+  - assistant
+  - llm
+  - agent
+maintainers:
+  - name: Ibraheem

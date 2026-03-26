@@ -1,0 +1,19 @@
+{{- if include "halfmoon.hasWorkspaceFiles" . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "halfmoon.fullname" . }}-workspace
+  labels:
+    {{- include "halfmoon.labels" . | nindent 4 }}
+data:
+  {{- range $name, $content := .Values.workspace.files }}
+  {{ printf "root--%s" $name }}: |
+    {{- $content | nindent 4 }}
+  {{- end }}
+  {{- range $agentId, $agentFiles := .Values.workspace.agents }}
+  {{- range $name, $content := $agentFiles }}
+  {{ printf "agent--%s--%s" $agentId $name }}: |
+    {{- $content | nindent 4 }}
+  {{- end }}
+  {{- end }}
+{{- end }}

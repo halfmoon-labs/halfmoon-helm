@@ -1,0 +1,44 @@
+suite: ConfigMap
+templates:
+  - templates/configmap.yaml
+values:
+  - ../values.yaml
+set:
+  config.agents.defaults.model_name: "test-model"
+tests:
+  - it: should render a ConfigMap
+    asserts:
+      - isKind:
+          of: ConfigMap
+
+  - it: should contain config.json key
+    asserts:
+      - isNotNull:
+          path: data["config.json"]
+
+  - it: should serialize config as JSON
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"agents"'
+
+  - it: should include gateway config
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"gateway"'
+
+  - it: should include model_name in serialized config
+    asserts:
+      - matchRegex:
+          path: data["config.json"]
+          pattern: '"model_name":"test-model"'
+
+  - it: should have standard labels
+    asserts:
+      - isNotNull:
+          path: metadata.labels["app.kubernetes.io/name"]
+      - isNotNull:
+          path: metadata.labels["app.kubernetes.io/instance"]
+      - isNotNull:
+          path: metadata.labels["helm.sh/chart"]

@@ -1,0 +1,175 @@
+image:
+  repository: ghcr.io/halfmoon-labs/halfmoon
+  tag: ""  # Defaults to .Chart.AppVersion
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# ---------------------------------------------------------------------------
+# Halfmoon config.json
+# ---------------------------------------------------------------------------
+# This entire block is serialized as JSON into the ConfigMap.
+# Any field supported by Halfmoon's config.json can be added here.
+# See config/config.example.json for all available fields.
+config:
+  agents:
+    defaults:
+      model_name: ""            # REQUIRED — e.g., "claude-sonnet-4-20250514"
+      max_tokens: 8192
+      context_window: 131072
+      temperature: 0.7
+      max_tool_iterations: 20
+      restrict_to_workspace: true
+  gateway:
+    host: "0.0.0.0"            # Listen on all interfaces for Kubernetes
+    port: 18790
+    log_level: "info"
+  tools: {}
+  channels: {}
+  heartbeat:
+    enabled: false
+    interval: 30
+
+# ---------------------------------------------------------------------------
+# Secrets (.security.yml)
+# ---------------------------------------------------------------------------
+# Set credentials here or reference an existing Kubernetes Secret.
+credentials:
+  # If set, use this existing Secret instead of creating one.
+  existingSecret: ""
+
+  # Content for .security.yml — serialized as YAML into the Secret.
+  # Example:
+  #   security:
+  #     model_list:
+  #       claude-sonnet-4-20250514:0:
+  #         api_keys:
+  #           - "sk-ant-..."
+  #     channels:
+  #       telegram:
+  #         token: "123456:ABC..."
+  security: {}
+
+# ---------------------------------------------------------------------------
+# Workspace identity files
+# ---------------------------------------------------------------------------
+# Files declared here are written into the workspace on every pod start,
+# overwriting any existing copies. Helm is the source of truth for identity.
+workspace:
+  # Root workspace files — written to workspace/
+  files: {}
+  #   AGENT.md: |
+  #     ---
+  #     name: Halfmoon
+  #     description: General-purpose AI assistant
+  #     ---
+  #     You are Halfmoon, a helpful AI assistant.
+  #   SOUL.md: |
+  #     Be concise, accurate, and helpful.
+
+  # Per-agent identity files — written to workspace/agents/{id}/
+  agents: {}
+  #   researcher:
+  #     AGENT.md: |
+  #       ---
+  #       name: Research Specialist
+  #       description: Finds and analyzes information from the web
+  #       ---
+  #       You are a research specialist. Focus on accuracy and cite sources.
+  #   coder:
+  #     AGENT.md: |
+  #       ---
+  #       name: Code Engineer
+  #       description: Writes and reviews code
+  #       ---
+  #       You are a code engineer. Write clean, tested code.
+
+# Extra environment variables injected into the container.
+# Useful for referencing external secrets or overriding config.
+extraEnv: []
+#   - name: HALFMOON_CHANNELS_TELEGRAM_TOKEN
+#     valueFrom:
+#       secretKeyRef:
+#         name: my-secret
+#         key: telegram-token
+
+# ---------------------------------------------------------------------------
+# Service Account
+# ---------------------------------------------------------------------------
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# ---------------------------------------------------------------------------
+# Persistence (workspace)
+# ---------------------------------------------------------------------------
+persistence:
+  enabled: true
+  size: 5Gi
+  accessMode: ReadWriteOnce
+  storageClass: ""              # Empty = cluster default
+  existingClaim: ""             # If set, use this PVC instead of creating one
+
+# ---------------------------------------------------------------------------
+# Service
+# ---------------------------------------------------------------------------
+service:
+  type: ClusterIP
+  port: 18790
+
+# ---------------------------------------------------------------------------
+# Ingress
+# ---------------------------------------------------------------------------
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  #   nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+  #   nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+  hosts: []
+  #   - host: halfmoon.example.com
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix
+  tls: []
+  #   - secretName: halfmoon-tls
+  #     hosts:
+  #       - halfmoon.example.com
+
+# ---------------------------------------------------------------------------
+# Resources
+# ---------------------------------------------------------------------------
+resources: {}
+#   requests:
+#     cpu: 100m
+#     memory: 64Mi
+#   limits:
+#     cpu: 1000m
+#     memory: 256Mi
+
+# ---------------------------------------------------------------------------
+# Scheduling
+# ---------------------------------------------------------------------------
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# ---------------------------------------------------------------------------
+# Pod
+# ---------------------------------------------------------------------------
+podAnnotations: {}
+podLabels: {}
+
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000

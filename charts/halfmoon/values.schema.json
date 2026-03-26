@@ -1,0 +1,282 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["image", "config"],
+  "properties": {
+    "image": {
+      "type": "object",
+      "required": ["repository"],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Container image repository"
+        },
+        "tag": {
+          "type": "string",
+          "description": "Image tag, defaults to Chart.AppVersion"
+        },
+        "pullPolicy": {
+          "type": "string",
+          "enum": ["Always", "IfNotPresent", "Never"],
+          "default": "IfNotPresent"
+        }
+      }
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" }
+        }
+      }
+    },
+    "nameOverride": { "type": "string" },
+    "fullnameOverride": { "type": "string" },
+    "config": {
+      "type": "object",
+      "description": "Halfmoon config.json — serialized as JSON into the ConfigMap",
+      "required": ["agents"],
+      "properties": {
+        "agents": {
+          "type": "object",
+          "required": ["defaults"],
+          "properties": {
+            "defaults": {
+              "type": "object",
+              "required": ["model_name"],
+              "properties": {
+                "model_name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Primary LLM model name (e.g., claude-sonnet-4-20250514)"
+                },
+                "max_tokens": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "default": 8192
+                },
+                "context_window": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "default": 131072
+                },
+                "temperature": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 2,
+                  "default": 0.7
+                },
+                "max_tool_iterations": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "default": 20
+                },
+                "restrict_to_workspace": {
+                  "type": "boolean",
+                  "default": true
+                }
+              }
+            },
+            "list": {
+              "type": "array",
+              "description": "Named agent configurations",
+              "items": {
+                "type": "object",
+                "required": ["id"],
+                "properties": {
+                  "id": { "type": "string", "minLength": 1 },
+                  "default": { "type": "boolean" },
+                  "name": { "type": "string" },
+                  "model": {
+                    "type": "object",
+                    "properties": {
+                      "primary": { "type": "string" },
+                      "fallbacks": {
+                        "type": "array",
+                        "items": { "type": "string" }
+                      }
+                    }
+                  },
+                  "skills": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "subagents": {
+                    "type": "object",
+                    "properties": {
+                      "allow_agents": {
+                        "type": "array",
+                        "items": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "gateway": {
+          "type": "object",
+          "properties": {
+            "host": {
+              "type": "string",
+              "default": "0.0.0.0"
+            },
+            "port": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535,
+              "default": 18790
+            },
+            "log_level": {
+              "type": "string",
+              "enum": ["debug", "info", "warn", "error", "fatal"],
+              "default": "info"
+            }
+          }
+        },
+        "tools": { "type": "object" },
+        "channels": { "type": "object" },
+        "heartbeat": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": false },
+            "interval": { "type": "integer", "minimum": 5, "default": 30 }
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "credentials": {
+      "type": "object",
+      "properties": {
+        "existingSecret": {
+          "type": "string",
+          "description": "Name of an existing Secret to use instead of creating one"
+        },
+        "security": {
+          "type": "object",
+          "description": "Content for .security.yml (API keys, channel tokens)",
+          "additionalProperties": true
+        }
+      }
+    },
+    "workspace": {
+      "type": "object",
+      "description": "Workspace identity files written on every pod start",
+      "properties": {
+        "files": {
+          "type": "object",
+          "description": "Root workspace files (filename → content)",
+          "additionalProperties": { "type": "string" }
+        },
+        "agents": {
+          "type": "object",
+          "description": "Per-agent identity files (agentId → {filename → content})",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      }
+    },
+    "extraEnv": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "serviceAccount": {
+      "type": "object",
+      "properties": {
+        "create": { "type": "boolean", "default": true },
+        "name": { "type": "string" },
+        "annotations": { "type": "object" }
+      }
+    },
+    "persistence": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "size": { "type": "string", "default": "5Gi" },
+        "accessMode": {
+          "type": "string",
+          "enum": ["ReadWriteOnce", "ReadWriteMany", "ReadOnlyMany"],
+          "default": "ReadWriteOnce"
+        },
+        "storageClass": { "type": "string" },
+        "existingClaim": { "type": "string" }
+      }
+    },
+    "service": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["ClusterIP", "NodePort", "LoadBalancer"],
+          "default": "ClusterIP"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 18790
+        }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "className": { "type": "string" },
+        "annotations": { "type": "object" },
+        "hosts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "host": { "type": "string" },
+              "paths": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "path": { "type": "string" },
+                    "pathType": {
+                      "type": "string",
+                      "enum": ["Prefix", "Exact", "ImplementationSpecific"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tls": { "type": "array" }
+      }
+    },
+    "resources": { "type": "object" },
+    "nodeSelector": { "type": "object" },
+    "tolerations": { "type": "array" },
+    "affinity": { "type": "object" },
+    "podAnnotations": { "type": "object" },
+    "podLabels": { "type": "object" },
+    "securityContext": {
+      "type": "object",
+      "properties": {
+        "runAsUser": { "type": "integer" },
+        "runAsGroup": { "type": "integer" },
+        "fsGroup": { "type": "integer" }
+      }
+    },
+    "containerSecurityContext": {
+      "type": "object",
+      "properties": {
+        "allowPrivilegeEscalation": { "type": "boolean" },
+        "readOnlyRootFilesystem": { "type": "boolean" },
+        "runAsNonRoot": { "type": "boolean" },
+        "runAsUser": { "type": "integer" }
+      }
+    }
+  }
+}

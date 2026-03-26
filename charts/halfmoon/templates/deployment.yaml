@@ -1,0 +1,167 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "halfmoon.fullname" . }}
+  labels:
+    {{- include "halfmoon.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "halfmoon.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        checksum/workspace: {{ include (print $.Template.BasePath "/workspace-configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "halfmoon.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "halfmoon.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      initContainers:
+        - name: init-workspace
+          image: {{ include "halfmoon.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -e
+              # Run onboard to create default workspace structure
+              halfmoon onboard
+              {{- if include "halfmoon.hasWorkspaceFiles" . }}
+              # Copy workspace identity files from ConfigMap (always overwrite)
+              for f in /workspace-files/*; do
+                [ ! -f "$f" ] && continue
+                key=$(basename "$f")
+                case "$key" in
+                  root--*)
+                    filename="${key#root--}"
+                    cp "$f" "/home/halfmoon/.halfmoon/workspace/${filename}"
+                    ;;
+                  agent--*)
+                    rest="${key#agent--}"
+                    agent_id="${rest%%--*}"
+                    filename="${rest#*--}"
+                    mkdir -p "/home/halfmoon/.halfmoon/workspace/agents/${agent_id}"
+                    cp "$f" "/home/halfmoon/.halfmoon/workspace/agents/${agent_id}/${filename}"
+                    ;;
+                esac
+              done
+              {{- end }}
+          env:
+            - name: HALFMOON_HOME
+              value: /home/halfmoon/.halfmoon
+          volumeMounts:
+            - name: workspace
+              mountPath: /home/halfmoon/.halfmoon/workspace
+            - name: config
+              mountPath: /home/halfmoon/.halfmoon/config.json
+              subPath: config.json
+              readOnly: true
+            {{- if include "halfmoon.hasWorkspaceFiles" . }}
+            - name: workspace-files
+              mountPath: /workspace-files
+              readOnly: true
+            {{- end }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ include "halfmoon.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["halfmoon", "gateway"]
+          env:
+            - name: HALFMOON_HOME
+              value: /home/halfmoon/.halfmoon
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: gateway
+              containerPort: {{ .Values.config.gateway.port | default 18790 }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: gateway
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: gateway
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          startupProbe:
+            httpGet:
+              path: /health
+              port: gateway
+            initialDelaySeconds: 2
+            periodSeconds: 5
+            failureThreshold: 30
+          volumeMounts:
+            - name: config
+              mountPath: /home/halfmoon/.halfmoon/config.json
+              subPath: config.json
+              readOnly: true
+            - name: security
+              mountPath: /home/halfmoon/.halfmoon/.security.yml
+              subPath: .security.yml
+              readOnly: true
+            - name: workspace
+              mountPath: /home/halfmoon/.halfmoon/workspace
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "halfmoon.fullname" . }}
+        - name: security
+          secret:
+            secretName: {{ include "halfmoon.secretName" . }}
+            defaultMode: 0600
+        - name: workspace
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "halfmoon.pvcName" . }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if include "halfmoon.hasWorkspaceFiles" . }}
+        - name: workspace-files
+          configMap:
+            name: {{ include "halfmoon.fullname" . }}-workspace
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

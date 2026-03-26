@@ -1,0 +1,71 @@
+suite: Service
+templates:
+  - templates/service.yaml
+values:
+  - ../values.yaml
+set:
+  config.agents.defaults.model_name: "test-model"
+tests:
+  - it: should render a Service
+    asserts:
+      - isKind:
+          of: Service
+
+  - it: should default to ClusterIP
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+
+  - it: should use configured port
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 18790
+
+  - it: should target the gateway named port
+    asserts:
+      - equal:
+          path: spec.ports[0].targetPort
+          value: gateway
+      - equal:
+          path: spec.ports[0].name
+          value: gateway
+
+  - it: should support NodePort type
+    set:
+      service.type: NodePort
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort
+
+  - it: should support LoadBalancer type
+    set:
+      service.type: LoadBalancer
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+
+  - it: should support custom port
+    set:
+      service.port: 8080
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 8080
+
+  - it: should have selector labels
+    asserts:
+      - isNotNull:
+          path: spec.selector["app.kubernetes.io/name"]
+      - isNotNull:
+          path: spec.selector["app.kubernetes.io/instance"]
+
+  - it: should have standard labels
+    asserts:
+      - isNotNull:
+          path: metadata.labels["app.kubernetes.io/name"]
+      - isNotNull:
+          path: metadata.labels["helm.sh/chart"]

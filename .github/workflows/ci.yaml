@@ -1,0 +1,109 @@
+name: Lint & Test Charts
+
+on:
+  pull_request:
+    paths:
+      - "charts/**"
+      - ".github/workflows/ci.yaml"
+  push:
+    branches:
+      - main
+    paths:
+      - "charts/**"
+      - ".github/workflows/ci.yaml"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Helm lint
+        run: helm lint charts/halfmoon
+
+      - name: Helm lint (with required values)
+        run: |
+          helm lint charts/halfmoon \
+            --set config.agents.defaults.model_name=test-model
+
+      - name: Helm template (default values)
+        run: |
+          helm template test-release charts/halfmoon \
+            --set config.agents.defaults.model_name=test-model
+
+      - name: Helm template (all features enabled)
+        run: |
+          helm template test-release charts/halfmoon \
+            --set config.agents.defaults.model_name=test-model \
+            --set ingress.enabled=true \
+            --set ingress.className=nginx \
+            --set ingress.hosts[0].host=halfmoon.example.com \
+            --set ingress.hosts[0].paths[0].path=/ \
+            --set ingress.hosts[0].paths[0].pathType=Prefix \
+            --set persistence.enabled=true \
+            --set serviceAccount.create=true
+
+      - name: Helm template (persistence disabled)
+        run: |
+          helm template test-release charts/halfmoon \
+            --set config.agents.defaults.model_name=test-model \
+            --set persistence.enabled=false
+
+      - name: Helm template (existing secret)
+        run: |
+          helm template test-release charts/halfmoon \
+            --set config.agents.defaults.model_name=test-model \
+            --set credentials.existingSecret=my-secret
+
+      - name: Validate schema
+        run: |
+          helm template test-release charts/halfmoon \
+            --set config.agents.defaults.model_name=test-model \
+            --validate
+
+  chart-testing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Install chart-testing
+        uses: helm/chart-testing-action@v2.7.0
+
+      - name: List changed charts
+        id: list-changed
+        run: |
+          changed=$(ct list-changed --config ct.yaml 2>/dev/null || ct list-changed --chart-dirs charts)
+          if [[ -n "$changed" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Lint changed charts
+        if: steps.list-changed.outputs.changed == 'true'
+        run: ct lint --config ct.yaml 2>/dev/null || ct lint --chart-dirs charts
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Install helm-unittest plugin
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest.git
+
+      - name: Run unit tests
+        run: helm unittest charts/halfmoon

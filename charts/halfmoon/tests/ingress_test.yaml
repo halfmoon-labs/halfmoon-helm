@@ -1,0 +1,119 @@
+suite: Ingress
+templates:
+  - templates/ingress.yaml
+values:
+  - ../values.yaml
+set:
+  config.agents.defaults.model_name: "test-model"
+tests:
+  - it: should not render when disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render when enabled
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: halfmoon.example.com
+          paths:
+            - path: /
+              pathType: Prefix
+    asserts:
+      - isKind:
+          of: Ingress
+
+  - it: should set ingressClassName
+    set:
+      ingress.enabled: true
+      ingress.className: nginx
+      ingress.hosts:
+        - host: halfmoon.example.com
+          paths:
+            - path: /
+              pathType: Prefix
+    asserts:
+      - equal:
+          path: spec.ingressClassName
+          value: nginx
+
+  - it: should set host and path
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: halfmoon.example.com
+          paths:
+            - path: /
+              pathType: Prefix
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: "halfmoon.example.com"
+      - equal:
+          path: spec.rules[0].http.paths[0].path
+          value: /
+      - equal:
+          path: spec.rules[0].http.paths[0].pathType
+          value: Prefix
+
+  - it: should set backend service name and port
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: halfmoon.example.com
+          paths:
+            - path: /
+              pathType: Prefix
+    asserts:
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.port.name
+          value: gateway
+
+  - it: should configure TLS
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: halfmoon.example.com
+          paths:
+            - path: /
+              pathType: Prefix
+      ingress.tls:
+        - secretName: halfmoon-tls
+          hosts:
+            - halfmoon.example.com
+    asserts:
+      - equal:
+          path: spec.tls[0].secretName
+          value: halfmoon-tls
+      - contains:
+          path: spec.tls[0].hosts
+          content: "halfmoon.example.com"
+
+  - it: should set annotations
+    set:
+      ingress.enabled: true
+      ingress.annotations:
+        nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      ingress.hosts:
+        - host: halfmoon.example.com
+          paths:
+            - path: /
+              pathType: Prefix
+    asserts:
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/proxy-read-timeout"]
+          value: "3600"
+
+  - it: should have standard labels
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: halfmoon.example.com
+          paths:
+            - path: /
+              pathType: Prefix
+    asserts:
+      - isNotNull:
+          path: metadata.labels["app.kubernetes.io/name"]
+      - isNotNull:
+          path: metadata.labels["helm.sh/chart"]
