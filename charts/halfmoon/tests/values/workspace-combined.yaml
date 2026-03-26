@@ -1,0 +1,10 @@
+config:
+  agents:
+    defaults:
+      model_name: "test-model"
+workspace:
+  files:
+    AGENT.md: "Root agent"
+  agents:
+    researcher:
+      AGENT.md: "Research agent"

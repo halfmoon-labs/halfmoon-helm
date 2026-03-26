@@ -12,30 +12,30 @@ tests:
           count: 0
 
   - it: should render when root workspace files are defined
-    set:
-      workspace.files.AGENT\.md: "You are Halfmoon"
+    values:
+      - values/workspace-root.yaml
     asserts:
       - isKind:
           of: ConfigMap
 
   - it: should render when agent workspace files are defined
-    set:
-      workspace.agents.researcher.AGENT\.md: "You are a researcher"
+    values:
+      - values/workspace-agent.yaml
     asserts:
       - isKind:
           of: ConfigMap
 
   - it: should use correct name suffix
-    set:
-      workspace.files.AGENT\.md: "You are Halfmoon"
+    values:
+      - values/workspace-root.yaml
     asserts:
       - equal:
           path: metadata.name
           value: RELEASE-NAME-halfmoon-workspace
 
   - it: should have standard labels
-    set:
-      workspace.files.AGENT\.md: "You are Halfmoon"
+    values:
+      - values/workspace-root.yaml
     asserts:
       - isNotNull:
           path: metadata.labels["app.kubernetes.io/name"]
@@ -43,23 +43,22 @@ tests:
           path: metadata.labels["helm.sh/chart"]
 
   - it: should create root file keys with root-- prefix
-    set:
-      workspace.files.AGENT\.md: "You are Halfmoon"
+    values:
+      - values/workspace-root.yaml
     asserts:
       - isNotNull:
           path: data["root--AGENT.md"]
 
   - it: should create agent file keys with agent-- prefix
-    set:
-      workspace.agents.researcher.AGENT\.md: "You are a researcher"
+    values:
+      - values/workspace-agent.yaml
     asserts:
       - isNotNull:
           path: data["agent--researcher--AGENT.md"]
 
   - it: should support multiple root files
-    set:
-      workspace.files.AGENT\.md: "You are Halfmoon"
-      workspace.files.SOUL\.md: "Be concise"
+    values:
+      - values/workspace-multi-root.yaml
     asserts:
       - isNotNull:
           path: data["root--AGENT.md"]
@@ -67,9 +66,8 @@ tests:
           path: data["root--SOUL.md"]
 
   - it: should support multiple agents with multiple files
-    set:
-      workspace.agents.researcher.AGENT\.md: "You are a researcher"
-      workspace.agents.coder.AGENT\.md: "You are a coder"
+    values:
+      - values/workspace-multi-agent.yaml
     asserts:
       - isNotNull:
           path: data["agent--researcher--AGENT.md"]
@@ -77,9 +75,8 @@ tests:
           path: data["agent--coder--AGENT.md"]
 
   - it: should support root and agent files together
-    set:
-      workspace.files.AGENT\.md: "Root agent"
-      workspace.agents.researcher.AGENT\.md: "Research agent"
+    values:
+      - values/workspace-combined.yaml
     asserts:
       - isNotNull:
           path: data["root--AGENT.md"]

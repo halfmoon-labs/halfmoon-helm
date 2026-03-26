@@ -1,0 +1,10 @@
+config:
+  agents:
+    defaults:
+      model_name: "test-model"
+workspace:
+  agents:
+    researcher:
+      AGENT.md: "You are a researcher"
+    coder:
+      AGENT.md: "You are a coder"

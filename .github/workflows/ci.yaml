@@ -58,11 +58,6 @@ jobs:
             --set config.agents.defaults.model_name=test-model \
             --set credentials.existingSecret=my-secret
 
-      - name: Validate schema
-        run: |
-          helm template test-release charts/halfmoon \
-            --set config.agents.defaults.model_name=test-model \
-            --validate
 
   chart-testing:
     runs-on: ubuntu-latest

@@ -132,8 +132,8 @@ tests:
         template: templates/deployment.yaml
 
   - it: should mount workspace-files volume when workspace files are defined
-    set:
-      workspace.files.AGENT\.md: "You are Halfmoon"
+    values:
+      - values/workspace-root.yaml
     asserts:
       - contains:
           path: spec.template.spec.initContainers[0].volumeMounts
@@ -144,8 +144,8 @@ tests:
         template: templates/deployment.yaml
 
   - it: should add workspace-files volume when workspace files are defined
-    set:
-      workspace.files.AGENT\.md: "You are Halfmoon"
+    values:
+      - values/workspace-root.yaml
     asserts:
       - contains:
           path: spec.template.spec.volumes
@@ -165,8 +165,8 @@ tests:
         template: templates/deployment.yaml
 
   - it: should include copy script when workspace files are defined
-    set:
-      workspace.files.AGENT\.md: "You are Halfmoon"
+    values:
+      - values/workspace-root.yaml
     asserts:
       - matchRegex:
           path: spec.template.spec.initContainers[0].args[0]
@@ -174,8 +174,8 @@ tests:
         template: templates/deployment.yaml
 
   - it: should include agent copy script when agent workspace files are defined
-    set:
-      workspace.agents.researcher.AGENT\.md: "You are a researcher"
+    values:
+      - values/workspace-agent.yaml
     asserts:
       - matchRegex:
           path: spec.template.spec.initContainers[0].args[0]
