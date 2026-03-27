@@ -68,8 +68,8 @@ spec:
             - name: HALFMOON_HOME
               value: /home/halfmoon/.halfmoon
           volumeMounts:
-            - name: workspace
-              mountPath: /home/halfmoon/.halfmoon/workspace
+            - name: data
+              mountPath: /home/halfmoon/.halfmoon
             - name: config
               mountPath: /home/halfmoon/.halfmoon/config.json
               subPath: config.json
@@ -118,6 +118,8 @@ spec:
             periodSeconds: 5
             failureThreshold: 30
           volumeMounts:
+            - name: data
+              mountPath: /home/halfmoon/.halfmoon
             - name: config
               mountPath: /home/halfmoon/.halfmoon/config.json
               subPath: config.json
@@ -126,8 +128,6 @@ spec:
               mountPath: /home/halfmoon/.halfmoon/.security.yml
               subPath: .security.yml
               readOnly: true
-            - name: workspace
-              mountPath: /home/halfmoon/.halfmoon/workspace
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           {{- with .Values.resources }}
@@ -142,7 +142,7 @@ spec:
           secret:
             secretName: {{ include "halfmoon.secretName" . }}
             defaultMode: 0600
-        - name: workspace
+        - name: data
           {{- if .Values.persistence.enabled }}
           persistentVolumeClaim:
             claimName: {{ include "halfmoon.pvcName" . }}

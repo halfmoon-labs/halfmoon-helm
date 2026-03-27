@@ -107,7 +107,7 @@ tests:
           value: 30
         template: templates/deployment.yaml
 
-  - it: should have init container running onboard via shell
+  - it: should have init container with shell command
     asserts:
       - equal:
           path: spec.template.spec.initContainers[0].name
@@ -117,9 +117,14 @@ tests:
           path: spec.template.spec.initContainers[0].command
           value: ["sh", "-c"]
         template: templates/deployment.yaml
-      - matchRegex:
-          path: spec.template.spec.initContainers[0].args[0]
-          pattern: "halfmoon onboard"
+
+  - it: should mount data volume at .halfmoon in init container
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: data
+            mountPath: /home/halfmoon/.halfmoon
         template: templates/deployment.yaml
 
   - it: should not mount workspace-files volume when no workspace files defined
@@ -182,7 +187,16 @@ tests:
           pattern: "Copy workspace identity files"
         template: templates/deployment.yaml
 
-  - it: should mount config as read-only
+  - it: should mount data volume at .halfmoon in main container
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: data
+            mountPath: /home/halfmoon/.halfmoon
+        template: templates/deployment.yaml
+
+  - it: should mount config as read-only overlay
     asserts:
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
@@ -193,7 +207,7 @@ tests:
             readOnly: true
         template: templates/deployment.yaml
 
-  - it: should mount security as read-only with mode 0600
+  - it: should mount security as read-only overlay with mode 0600
     asserts:
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
@@ -208,7 +222,7 @@ tests:
           value: 384
         template: templates/deployment.yaml
 
-  - it: should use PVC when persistence enabled
+  - it: should use PVC for data volume when persistence enabled
     set:
       persistence.enabled: true
     asserts:
@@ -217,7 +231,7 @@ tests:
           value: RELEASE-NAME-halfmoon
         template: templates/deployment.yaml
 
-  - it: should use emptyDir when persistence disabled
+  - it: should use emptyDir for data volume when persistence disabled
     set:
       persistence.enabled: false
     asserts:
