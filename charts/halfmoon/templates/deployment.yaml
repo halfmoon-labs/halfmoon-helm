@@ -43,6 +43,10 @@ spec:
               set -e
               mkdir -p /home/halfmoon/.halfmoon
               mkdir -p /home/halfmoon/.halfmoon/workspace/
+              # Pre-create subPath targets as files so the kubelet
+              # does not create them as directories on the PVC
+              touch /home/halfmoon/.halfmoon/.security.yml
+              touch /home/halfmoon/.halfmoon/config.json
 
               {{- if include "halfmoon.hasWorkspaceFiles" . }}
               # Copy workspace identity files from ConfigMap (always overwrite)
