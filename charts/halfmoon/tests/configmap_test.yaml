@@ -32,7 +32,7 @@ tests:
     asserts:
       - matchRegex:
           path: data["config.json"]
-          pattern: '"model_name":"test-model"'
+          pattern: '"model_name":\s*"test-model"'
 
   - it: should have standard labels
     asserts:
