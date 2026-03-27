@@ -41,8 +41,9 @@ spec:
           args:
             - |
               set -e
-              # Run onboard to create default workspace structure
-              halfmoon onboard
+              mkdir -p /home/openclaw/.halfmoon
+              mkdir -p /home/halfmoon/.halfmoon/workspace/
+
               {{- if include "halfmoon.hasWorkspaceFiles" . }}
               # Copy workspace identity files from ConfigMap (always overwrite)
               for f in /workspace-files/*; do
