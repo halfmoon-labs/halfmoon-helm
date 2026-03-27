@@ -5,4 +5,4 @@ metadata:
   labels:
     {{- include "halfmoon.labels" . | nindent 4 }}
 data:
-  config.json: {{ .Values.config | toJson | quote }}
+  config.json: {{ .Values.config | toPrettyJson | quote }}
