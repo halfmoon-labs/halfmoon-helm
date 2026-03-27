@@ -41,7 +41,7 @@ spec:
           args:
             - |
               set -e
-              mkdir -p /home/openclaw/.halfmoon
+              mkdir -p /home/halfmoon/.halfmoon
               mkdir -p /home/halfmoon/.halfmoon/workspace/
 
               {{- if include "halfmoon.hasWorkspaceFiles" . }}
