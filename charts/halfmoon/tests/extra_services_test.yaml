@@ -36,7 +36,7 @@ tests:
     asserts:
       - equal:
           path: metadata.name
-          value: RELEASE-NAME-halfmoon-baileys-bridge
+          value: baileys-bridge
 
   - it: should default to ClusterIP
     set:
