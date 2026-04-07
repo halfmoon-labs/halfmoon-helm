@@ -391,3 +391,31 @@ tests:
           content:
             name: my-registry
         template: templates/deployment.yaml
+
+  - it: should not add sidecars when empty
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 1
+        template: templates/deployment.yaml
+
+  - it: should add sidecar containers
+    set:
+      sidecars:
+        - name: my-sidecar
+          image: nginx:latest
+          ports:
+            - containerPort: 8080
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 2
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: my-sidecar
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[1].image
+          value: nginx:latest
+        template: templates/deployment.yaml

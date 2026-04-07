@@ -140,6 +140,16 @@ ingress:
   #       - halfmoon.example.com
 
 # ---------------------------------------------------------------------------
+# Sidecars
+# ---------------------------------------------------------------------------
+# Additional containers to run alongside the main halfmoon container.
+sidecars: []
+#   - name: my-sidecar
+#     image: my-image:latest
+#     ports:
+#       - containerPort: 8080
+
+# ---------------------------------------------------------------------------
 # Resources
 # ---------------------------------------------------------------------------
 resources: {}
