@@ -132,6 +132,9 @@ spec:
               mountPath: /home/halfmoon/.halfmoon/.security.yml
               subPath: .security.yml
               readOnly: true
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           {{- with .Values.resources }}
@@ -160,6 +163,9 @@ spec:
         - name: workspace-files
           configMap:
             name: {{ include "halfmoon.fullname" . }}-workspace
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

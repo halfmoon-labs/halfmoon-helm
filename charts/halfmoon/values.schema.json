@@ -260,6 +260,36 @@
       "description": "Additional sidecar containers to run alongside halfmoon",
       "items": { "type": "object" }
     },
+    "extraVolumes": {
+      "type": "array",
+      "description": "Additional volumes to add to the pod",
+      "items": { "type": "object" }
+    },
+    "extraVolumeMounts": {
+      "type": "array",
+      "description": "Additional volume mounts for the main halfmoon container",
+      "items": { "type": "object" }
+    },
+    "extraVolumeClaims": {
+      "type": "array",
+      "description": "Additional PVCs created alongside the chart",
+      "items": {
+        "type": "object",
+        "required": ["name", "accessModes", "resources"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "accessModes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["ReadWriteOnce", "ReadWriteMany", "ReadOnlyMany"]
+            }
+          },
+          "storageClassName": { "type": "string" },
+          "resources": { "type": "object" }
+        }
+      }
+    },
     "resources": { "type": "object" },
     "nodeSelector": { "type": "object" },
     "tolerations": { "type": "array" },

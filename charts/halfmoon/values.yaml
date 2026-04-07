@@ -148,6 +148,40 @@ sidecars: []
 #     image: my-image:latest
 #     ports:
 #       - containerPort: 8080
+#     volumeMounts:
+#       - name: sidecar-data
+#         mountPath: /data
+
+# ---------------------------------------------------------------------------
+# Extra volumes and volume mounts
+# ---------------------------------------------------------------------------
+# Additional volumes to add to the pod (for sidecars or the main container).
+extraVolumes: []
+#   - name: sidecar-data
+#     emptyDir: {}
+#   - name: certs
+#     secret:
+#       secretName: my-certs
+
+# Additional volume mounts for the main halfmoon container.
+extraVolumeMounts: []
+#   - name: certs
+#     mountPath: /etc/certs
+#     readOnly: true
+
+# Additional PVCs created alongside the chart.
+# Each claim name is prefixed with the release fullname.
+# Reference them in extraVolumes as:
+#   - name: my-claim
+#     persistentVolumeClaim:
+#       claimName: <release>-halfmoon-my-claim
+extraVolumeClaims: []
+#   - name: sidecar-data
+#     accessModes: [ReadWriteOnce]
+#     storageClassName: standard
+#     resources:
+#       requests:
+#         storage: 100Mi
 
 # ---------------------------------------------------------------------------
 # Resources

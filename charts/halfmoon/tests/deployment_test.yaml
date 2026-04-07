@@ -419,3 +419,49 @@ tests:
           path: spec.template.spec.containers[1].image
           value: nginx:latest
         template: templates/deployment.yaml
+
+  - it: should add extra volumes
+    set:
+      extraVolumes:
+        - name: sidecar-data
+          emptyDir: {}
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: sidecar-data
+            emptyDir: {}
+        template: templates/deployment.yaml
+
+  - it: should not add extra volumes when empty
+    asserts:
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: sidecar-data
+          any: true
+        template: templates/deployment.yaml
+
+  - it: should add extra volume mounts to main container
+    set:
+      extraVolumeMounts:
+        - name: certs
+          mountPath: /etc/certs
+          readOnly: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: certs
+            mountPath: /etc/certs
+            readOnly: true
+        template: templates/deployment.yaml
+
+  - it: should not add extra volume mounts when empty
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: certs
+          any: true
+        template: templates/deployment.yaml

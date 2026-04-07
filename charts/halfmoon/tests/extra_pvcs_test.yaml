@@ -1,0 +1,123 @@
+suite: Extra PVCs
+templates:
+  - templates/extra-pvcs.yaml
+values:
+  - ../values.yaml
+set:
+  config.agents.defaults.model_name: "test-model"
+tests:
+  - it: should not render when extraVolumeClaims is empty
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render a PVC for each claim
+    set:
+      extraVolumeClaims:
+        - name: sidecar-data
+          accessModes: [ReadWriteOnce]
+          storageClassName: standard
+          resources:
+            requests:
+              storage: 100Mi
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: PersistentVolumeClaim
+
+  - it: should prefix claim name with fullname
+    set:
+      extraVolumeClaims:
+        - name: sidecar-data
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 100Mi
+    asserts:
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-halfmoon-sidecar-data
+
+  - it: should set access modes
+    set:
+      extraVolumeClaims:
+        - name: sidecar-data
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 100Mi
+    asserts:
+      - contains:
+          path: spec.accessModes
+          content: ReadWriteOnce
+
+  - it: should set storage class when specified
+    set:
+      extraVolumeClaims:
+        - name: sidecar-data
+          accessModes: [ReadWriteOnce]
+          storageClassName: fast-ssd
+          resources:
+            requests:
+              storage: 1Gi
+    asserts:
+      - equal:
+          path: spec.storageClassName
+          value: "fast-ssd"
+
+  - it: should not set storage class when omitted
+    set:
+      extraVolumeClaims:
+        - name: sidecar-data
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 100Mi
+    asserts:
+      - isNull:
+          path: spec.storageClassName
+
+  - it: should set storage size
+    set:
+      extraVolumeClaims:
+        - name: sidecar-data
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 500Mi
+    asserts:
+      - equal:
+          path: spec.resources.requests.storage
+          value: 500Mi
+
+  - it: should render multiple PVCs
+    set:
+      extraVolumeClaims:
+        - name: claim-a
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 1Gi
+        - name: claim-b
+          accessModes: [ReadWriteMany]
+          resources:
+            requests:
+              storage: 5Gi
+    asserts:
+      - hasDocuments:
+          count: 2
+
+  - it: should have standard labels
+    set:
+      extraVolumeClaims:
+        - name: sidecar-data
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 100Mi
+    asserts:
+      - isNotNull:
+          path: metadata.labels["app.kubernetes.io/name"]
+      - isNotNull:
+          path: metadata.labels["helm.sh/chart"]
