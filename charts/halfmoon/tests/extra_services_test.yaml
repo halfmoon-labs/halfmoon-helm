@@ -1,0 +1,139 @@
+suite: Extra Services
+templates:
+  - templates/extra-services.yaml
+values:
+  - ../values.yaml
+set:
+  config.agents.defaults.model_name: "test-model"
+tests:
+  - it: should not render when extraServices is empty
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render a Service for each entry
+    set:
+      extraServices:
+        - name: baileys-bridge
+          ports:
+            - port: 9999
+              targetPort: 9999
+              name: health
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Service
+
+  - it: should prefix service name with fullname
+    set:
+      extraServices:
+        - name: baileys-bridge
+          ports:
+            - port: 9999
+              targetPort: 9999
+              name: health
+    asserts:
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-halfmoon-baileys-bridge
+
+  - it: should default to ClusterIP
+    set:
+      extraServices:
+        - name: baileys-bridge
+          ports:
+            - port: 9999
+              targetPort: 9999
+              name: health
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+
+  - it: should support custom service type
+    set:
+      extraServices:
+        - name: baileys-bridge
+          type: NodePort
+          ports:
+            - port: 9999
+              targetPort: 9999
+              name: health
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort
+
+  - it: should set ports
+    set:
+      extraServices:
+        - name: baileys-bridge
+          ports:
+            - port: 9999
+              targetPort: 9999
+              name: health
+            - port: 18801
+              targetPort: 18801
+              name: ws
+    asserts:
+      - lengthEqual:
+          path: spec.ports
+          count: 2
+      - contains:
+          path: spec.ports
+          content:
+            port: 9999
+            targetPort: 9999
+            name: health
+      - contains:
+          path: spec.ports
+          content:
+            port: 18801
+            targetPort: 18801
+            name: ws
+
+  - it: should use selector labels
+    set:
+      extraServices:
+        - name: baileys-bridge
+          ports:
+            - port: 9999
+              targetPort: 9999
+              name: health
+    asserts:
+      - isNotNull:
+          path: spec.selector["app.kubernetes.io/name"]
+      - isNotNull:
+          path: spec.selector["app.kubernetes.io/instance"]
+
+  - it: should have standard labels
+    set:
+      extraServices:
+        - name: baileys-bridge
+          ports:
+            - port: 9999
+              targetPort: 9999
+              name: health
+    asserts:
+      - isNotNull:
+          path: metadata.labels["app.kubernetes.io/name"]
+      - isNotNull:
+          path: metadata.labels["helm.sh/chart"]
+
+  - it: should render multiple services
+    set:
+      extraServices:
+        - name: svc-a
+          ports:
+            - port: 8080
+              targetPort: 8080
+              name: http
+        - name: svc-b
+          ports:
+            - port: 9090
+              targetPort: 9090
+              name: grpc
+    asserts:
+      - hasDocuments:
+          count: 2

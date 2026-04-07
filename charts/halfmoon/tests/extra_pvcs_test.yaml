@@ -37,7 +37,7 @@ tests:
     asserts:
       - equal:
           path: metadata.name
-          value: RELEASE-NAME-halfmoon-sidecar-data
+          value: sidecar-data
 
   - it: should set access modes
     set:

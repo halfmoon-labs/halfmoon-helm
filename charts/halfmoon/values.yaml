@@ -140,6 +140,21 @@ ingress:
   #       - halfmoon.example.com
 
 # ---------------------------------------------------------------------------
+# Extra Services
+# ---------------------------------------------------------------------------
+# Additional Services targeting the same pod (e.g. for sidecar ports).
+extraServices: []
+#   - name: baileys-bridge
+#     type: ClusterIP          # optional, defaults to ClusterIP
+#     ports:
+#       - port: 9999
+#         targetPort: 9999
+#         name: health
+#       - port: 18801
+#         targetPort: 18801
+#         name: ws
+
+# ---------------------------------------------------------------------------
 # Sidecars
 # ---------------------------------------------------------------------------
 # Additional containers to run alongside the main halfmoon container.

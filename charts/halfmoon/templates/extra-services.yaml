@@ -1,0 +1,15 @@
+{{- range .Values.extraServices }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "halfmoon.fullname" $ }}-{{ .name }}
+  labels:
+    {{- include "halfmoon.labels" $ | nindent 4 }}
+spec:
+  type: {{ .type | default "ClusterIP" }}
+  ports:
+    {{- toYaml .ports | nindent 4 }}
+  selector:
+    {{- include "halfmoon.selectorLabels" $ | nindent 4 }}
+{{- end }}

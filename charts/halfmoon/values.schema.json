@@ -255,6 +255,26 @@
         "tls": { "type": "array" }
       }
     },
+    "extraServices": {
+      "type": "array",
+      "description": "Additional Services targeting the same pod",
+      "items": {
+        "type": "object",
+        "required": ["name", "ports"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "type": {
+            "type": "string",
+            "enum": ["ClusterIP", "NodePort", "LoadBalancer"],
+            "default": "ClusterIP"
+          },
+          "ports": {
+            "type": "array",
+            "items": { "type": "object" }
+          }
+        }
+      }
+    },
     "sidecars": {
       "type": "array",
       "description": "Additional sidecar containers to run alongside halfmoon",
