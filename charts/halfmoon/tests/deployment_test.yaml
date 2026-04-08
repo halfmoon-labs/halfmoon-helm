@@ -465,3 +465,34 @@ tests:
             name: certs
           any: true
         template: templates/deployment.yaml
+
+  - it: should not add extra init containers when empty
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.initContainers
+          count: 1
+        template: templates/deployment.yaml
+
+  - it: should add extra init containers after init-workspace
+    set:
+      extraInitContainers:
+        - name: baileys-bridge
+          image: baileys:latest
+          restartPolicy: Always
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.initContainers
+          count: 2
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: init-workspace
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[1].name
+          value: baileys-bridge
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[1].restartPolicy
+          value: Always
+        template: templates/deployment.yaml

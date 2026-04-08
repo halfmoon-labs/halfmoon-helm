@@ -255,6 +255,11 @@
         "tls": { "type": "array" }
       }
     },
+    "extraInitContainers": {
+      "type": "array",
+      "description": "Additional init containers injected after init-workspace",
+      "items": { "type": "object" }
+    },
     "extraServices": {
       "type": "array",
       "description": "Additional Services targeting the same pod",

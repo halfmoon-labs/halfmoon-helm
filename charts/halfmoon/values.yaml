@@ -155,6 +155,24 @@ extraServices: []
 #         name: ws
 
 # ---------------------------------------------------------------------------
+# Extra init containers
+# ---------------------------------------------------------------------------
+# Additional init containers injected after init-workspace.
+# Use restartPolicy: Always for native sidecars (Kubernetes 1.28+)
+# that must be running before the main container starts.
+extraInitContainers: []
+#   - name: baileys-bridge
+#     image: baileys:latest
+#     restartPolicy: Always
+#     readinessProbe:
+#       httpGet:
+#         path: /health
+#         port: 9999
+#     ports:
+#       - containerPort: 9999
+#       - containerPort: 18801
+
+# ---------------------------------------------------------------------------
 # Sidecars
 # ---------------------------------------------------------------------------
 # Additional containers to run alongside the main halfmoon container.
