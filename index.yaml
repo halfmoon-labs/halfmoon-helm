@@ -3,6 +3,27 @@ entries:
   halfmoon:
   - apiVersion: v2
     appVersion: v0.2.4
+    created: "2026-04-08T09:11:18.716454245Z"
+    description: Helm chart for Halfmoon — ultra-lightweight AI assistant in Go
+    digest: 4fa50043650a21db1c5cd0c09af8f66887d88465b3b6e6c18457f6433e1a0064
+    home: https://halfmoon.sh
+    keywords:
+    - halfmoon
+    - ai
+    - assistant
+    - llm
+    - agent
+    maintainers:
+    - name: Ibraheem
+    name: halfmoon
+    sources:
+    - https://github.com/halfmoon-labs/halfmoon
+    type: application
+    urls:
+    - https://github.com/halfmoon-labs/halfmoon-helm/releases/download/halfmoon-0.1.11/halfmoon-0.1.11.tgz
+    version: 0.1.11
+  - apiVersion: v2
+    appVersion: v0.2.4
     created: "2026-04-07T16:12:17.080001182Z"
     description: Helm chart for Halfmoon — ultra-lightweight AI assistant in Go
     digest: ddb08663ca48ac4ad1a6b970ea5a35aa4ffde76c80f98a2f593931a24c081c8f
@@ -232,4 +253,4 @@ entries:
     urls:
     - https://github.com/halfmoon-labs/halfmoon-helm/releases/download/halfmoon-0.1.0/halfmoon-0.1.0.tgz
     version: 0.1.0
-generated: "2026-04-07T16:12:17.080043802Z"
+generated: "2026-04-08T09:11:18.716497475Z"
