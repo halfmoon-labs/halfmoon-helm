@@ -64,6 +64,13 @@ spec:
                 esac
               done
               {{- end }}
+              {{- if .Values.skillFiles }}
+              # Install skills from external ConfigMaps (always overwrite)
+              {{- range .Values.skillFiles }}
+              mkdir -p /home/halfmoon/.halfmoon/workspace/skills/{{ .name }}
+              [ -f /skill-files/{{ .name }}/{{ .key }} ] && cp /skill-files/{{ .name }}/{{ .key }} /home/halfmoon/.halfmoon/workspace/skills/{{ .name }}/SKILL.md
+              {{- end }}
+              {{- end }}
           env:
             - name: HALFMOON_HOME
               value: /home/halfmoon/.halfmoon
@@ -81,6 +88,12 @@ spec:
             {{- if include "halfmoon.hasWorkspaceFiles" . }}
             - name: workspace-files
               mountPath: /workspace-files
+              readOnly: true
+            {{- end }}
+            {{- range .Values.skillFiles }}
+            - name: skill-{{ .name }}
+              mountPath: /skill-files/{{ .name }}/{{ .key }}
+              subPath: {{ .key }}
               readOnly: true
             {{- end }}
           securityContext:
@@ -166,6 +179,11 @@ spec:
         - name: workspace-files
           configMap:
             name: {{ include "halfmoon.fullname" . }}-workspace
+        {{- end }}
+        {{- range .Values.skillFiles }}
+        - name: skill-{{ .name }}
+          configMap:
+            name: {{ .configMapName }}
         {{- end }}
         {{- with .Values.extraVolumes }}
         {{- toYaml . | nindent 8 }}

@@ -473,6 +473,74 @@ tests:
           count: 1
         template: templates/deployment.yaml
 
+  - it: should not mount skill volumes when skillFiles is empty
+    asserts:
+      - notContains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: skill-gog
+          any: true
+        template: templates/deployment.yaml
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: skill-gog
+          any: true
+        template: templates/deployment.yaml
+
+  - it: should mount skill file subPaths in init container
+    set:
+      skillFiles:
+        - name: gog
+          configMapName: cm-gog
+          key: SKILL.md
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: skill-gog
+            mountPath: /skill-files/gog/SKILL.md
+            subPath: SKILL.md
+            readOnly: true
+        template: templates/deployment.yaml
+
+  - it: should add configMap volume for each skill file
+    set:
+      skillFiles:
+        - name: gog
+          configMapName: cm-gog
+          key: SKILL.md
+        - name: notion
+          configMapName: cm-notion
+          key: SKILL.md
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: skill-gog
+            configMap:
+              name: cm-gog
+        template: templates/deployment.yaml
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: skill-notion
+            configMap:
+              name: cm-notion
+        template: templates/deployment.yaml
+
+  - it: should include skill install script when skillFiles is set
+    set:
+      skillFiles:
+        - name: gog
+          configMapName: cm-gog
+          key: SKILL.md
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: "workspace/skills/gog/SKILL.md"
+        template: templates/deployment.yaml
+
   - it: should add extra init containers after init-workspace
     set:
       extraInitContainers:

@@ -260,6 +260,19 @@
       "description": "Additional init containers injected after init-workspace",
       "items": { "type": "object" }
     },
+    "skillFiles": {
+      "type": "array",
+      "description": "Skill definitions mounted from external ConfigMaps into workspace/skills/<name>/SKILL.md",
+      "items": {
+        "type": "object",
+        "required": ["name", "configMapName", "key"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "configMapName": { "type": "string", "minLength": 1 },
+          "key": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
     "extraServices": {
       "type": "array",
       "description": "Additional Services targeting the same pod",

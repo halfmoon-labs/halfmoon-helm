@@ -140,6 +140,21 @@ ingress:
   #       - halfmoon.example.com
 
 # ---------------------------------------------------------------------------
+# Skill files
+# ---------------------------------------------------------------------------
+# Skill definitions mounted from external ConfigMaps into
+# workspace/skills/<name>/SKILL.md on every pod start.
+# Each entry references a ConfigMap key whose value is the SKILL.md content.
+# Uses subPath mounts, so ConfigMap updates require a pod restart to propagate.
+skillFiles: []
+#   - name: gog
+#     configMapName: halfmoon-skill-gog
+#     key: SKILL.md
+#   - name: notion
+#     configMapName: halfmoon-skill-notion
+#     key: SKILL.md
+
+# ---------------------------------------------------------------------------
 # Extra Services
 # ---------------------------------------------------------------------------
 # Additional Services targeting the same pod (e.g. for sidecar ports).
